@@ -155,142 +155,186 @@
     </div>
   </el-drawer>
 </template>
-<script setup>
-import { computed, ref, watch } from 'vue'
+<script setup lang="ts">
+import { computed, ref, watch, type Ref, type ComputedRef } from 'vue'
 
-const props = defineProps({
-  dialogVisible: {
-    type: Boolean,
-    default: false,
-  },
-})
-const show = computed(() => props.dialogVisible)
+interface Props {
+  dialogVisible: boolean
+}
 
-const emit = defineEmits(['close'])
+const props = defineProps<Props>()
+const show: ComputedRef<boolean> = computed(() => props.dialogVisible)
+
+const emit = defineEmits<{
+  (e: 'close'): void
+}>()
 
 const handleClose = () => {
   emit('close')
 }
 
-const fileInput = ref(null)
-const originalImage = ref(null)
-const previewImage = ref(null)
-const quality = ref(80)
-const outputFormat = ref('image/jpeg')
-const resizeEnabled = ref(false)
-const resizeWidth = ref(null)
-const resizeHeight = ref(null)
-const maintainAspectRatio = ref(true)
-const activeTab = ref('original')
+const fileInput: Ref<HTMLInputElement | null> = ref(null)
+const originalImage: Ref<string | null> = ref(null)
+const previewImage: Ref<string | null> = ref(null)
+const quality: Ref<number> = ref(80)
+const outputFormat: Ref<string> = ref('image/jpeg')
+const resizeEnabled: Ref<boolean> = ref(false)
+const resizeWidth: Ref<number | null> = ref(null)
+const resizeHeight: Ref<number | null> = ref(null)
+const maintainAspectRatio: Ref<boolean> = ref(true)
+const activeTab: Ref<string> = ref('original')
 
 // 图片尺寸信息
-const originalWidth = ref(0)
-const originalHeight = ref(0)
-const compressedWidth = ref(0)
-const compressedHeight = ref(0)
+const originalWidth: Ref<number> = ref(0)
+const originalHeight: Ref<number> = ref(0)
+const compressedWidth: Ref<number> = ref(0)
+const compressedHeight: Ref<number> = ref(0)
 
 // 文件大小信息
-const originalSize = ref(0)
-const compressedSize = ref(0)
-const compressionRatio = ref(0)
+const originalSize: Ref<number> = ref(0)
+const compressedSize: Ref<number> = ref(0)
+const compressionRatio: Ref<number> = ref(0)
 
 // 打开文件选择器
-const openFilePicker = () => {
-  fileInput.value.click()
+const openFilePicker = (): void => {
+  if (fileInput.value) {
+    fileInput.value.click()
+  }
 }
 
 // 处理文件选择
-const handleFileChange = (e) => {
-  const file = e.target.files[0]
+const handleFileChange = (e: Event): void => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
   if (file && file.type.startsWith('image/')) {
     processImage(file)
   }
 }
 
 // 处理拖拽事件
-const handleDragOver = (e) => {
-  e.dataTransfer.dropEffect = 'copy'
+const handleDragOver = (e: DragEvent): void => {
+  e.preventDefault()
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy'
+  }
 }
 
-const handleDrop = (e) => {
-  const file = e.dataTransfer.files[0]
+const handleDrop = (e: DragEvent): void => {
+  e.preventDefault()
+  const file = e.dataTransfer?.files?.[0]
   if (file && file.type.startsWith('image/')) {
     processImage(file)
   }
 }
 
 // 处理图片
-const processImage = (file) => {
+const processImage = (file: File): void => {
   const reader = new FileReader()
 
-  reader.onload = (e) => {
-    originalImage.value = e.target.result
-    originalSize.value = file.size
+  reader.onload = (e: ProgressEvent<FileReader>) => {
+    if (typeof e.target?.result === 'string') {
+      originalImage.value = e.target.result
+      originalSize.value = file.size
 
-    // 获取原始图片尺寸
-    const img = new Image()
-    img.onload = () => {
-      originalWidth.value = img.width
-      originalHeight.value = img.height
+      // 获取原始图片尺寸
+      const img = new Image()
+      img.onload = () => {
+        originalWidth.value = img.width
+        originalHeight.value = img.height
 
-      // 如果启用了尺寸调整且保持宽高比
-      if (resizeEnabled.value && maintainAspectRatio.value) {
-        // 自动计算高度
-        if (resizeWidth.value && !resizeHeight.value) {
-          resizeHeight.value = Math.round((resizeWidth.value / img.width) * img.height)
+        // 如果启用了尺寸调整且保持宽高比
+        if (resizeEnabled.value && maintainAspectRatio.value) {
+          // 自动计算高度
+          if (resizeWidth.value && !resizeHeight.value && img.width > 0) {
+            resizeHeight.value = Math.round((resizeWidth.value / img.width) * img.height)
+          }
+          // 自动计算宽度
+          else if (resizeHeight.value && !resizeWidth.value && img.height > 0) {
+            resizeWidth.value = Math.round((resizeHeight.value / img.height) * img.width)
+          }
         }
-        // 自动计算宽度
-        else if (resizeHeight.value && !resizeWidth.value) {
-          resizeWidth.value = Math.round((resizeHeight.value / img.height) * img.width)
-        }
+
+        compressImage(img)
       }
-
-      compressImage(img)
+      img.onerror = () => {
+        console.error('图片加载失败')
+      }
+      img.src = e.target.result
     }
-    img.src = e.target.result
+  }
+
+  reader.onerror = () => {
+    console.error('文件读取失败')
   }
 
   reader.readAsDataURL(file)
 }
 
 // 压缩图片
-const compressImage = (img) => {
+const compressImage = (img: HTMLImageElement): void => {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
 
-  // 设置画布尺寸
-  if (resizeEnabled.value && (resizeWidth.value || resizeHeight.value)) {
-    const width = resizeWidth.value || Math.round((resizeHeight.value / img.height) * img.width)
-    const height = resizeHeight.value || Math.round((resizeWidth.value / img.width) * img.height)
-
-    canvas.width = width
-    canvas.height = height
-  } else {
-    canvas.width = img.width
-    canvas.height = img.height
+  if (!ctx) {
+    console.error('无法获取canvas上下文')
+    return
   }
+
+  // 设置画布尺寸
+  let width: number, height: number
+  if (resizeEnabled.value && (resizeWidth.value || resizeHeight.value)) {
+    if (img.height <= 0 || img.width <= 0) {
+      console.error('图片尺寸无效')
+      return
+    }
+
+    width = resizeWidth.value || Math.round((resizeHeight.value! / img.height) * img.width)
+    height = resizeHeight.value || Math.round((resizeWidth.value! / img.width) * img.height)
+
+    // 验证尺寸值有效性
+    width = Math.max(1, Math.floor(width))
+    height = Math.max(1, Math.floor(height))
+  } else {
+    width = img.width
+    height = img.height
+  }
+
+  canvas.width = width
+  canvas.height = height
+
+  // 清空画布
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   // 绘制图片到画布
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
   // 压缩图片
-  previewImage.value = canvas.toDataURL(outputFormat.value, quality.value / 100)
+  try {
+    previewImage.value = canvas.toDataURL(outputFormat.value, quality.value / 100)
 
-  // 计算压缩后文件大小
-  compressedSize.value = Math.floor(
-    (previewImage.value.length - previewImage.value.indexOf(',') - 1) * 0.75,
-  )
+    if (previewImage.value) {
+      // 计算压缩后文件大小
+      compressedSize.value = Math.floor(
+        (previewImage.value.length - previewImage.value.indexOf(',') - 1) * 0.75,
+      )
 
-  // 计算压缩率
-  compressionRatio.value = Math.round((1 - compressedSize.value / originalSize.value) * 100)
+      // 计算压缩率
+      compressionRatio.value =
+        originalSize.value > 0
+          ? Math.round((1 - compressedSize.value / originalSize.value) * 100)
+          : 0
+    }
 
-  // 记录压缩后尺寸
-  compressedWidth.value = canvas.width
-  compressedHeight.value = canvas.height
+    // 记录压缩后尺寸
+    compressedWidth.value = canvas.width
+    compressedHeight.value = canvas.height
+  } catch (error) {
+    console.error('图片压缩失败:', error)
+  }
 }
 
 // 下载图片
-const downloadImage = () => {
+const downloadImage = (): void => {
   if (!previewImage.value) return
 
   const link = document.createElement('a')
@@ -311,10 +355,11 @@ const downloadImage = () => {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
+  link.remove()
 }
 
 // 重置所有状态
-const reset = () => {
+const reset = (): void => {
   originalImage.value = null
   previewImage.value = null
   originalSize.value = 0
@@ -334,8 +379,9 @@ const reset = () => {
 }
 
 // 格式化文件大小
-const formatFileSize = (bytes) => {
+const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes'
+  if (!bytes) return 'N/A'
 
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
@@ -348,7 +394,12 @@ const formatFileSize = (bytes) => {
 watch([quality, outputFormat, resizeEnabled, resizeWidth, resizeHeight], () => {
   if (originalImage.value) {
     const img = new Image()
-    img.onload = () => compressImage(img)
+    img.onload = () => {
+      compressImage(img)
+    }
+    img.onerror = () => {
+      console.error('图片加载失败')
+    }
     img.src = originalImage.value
   }
 })
