@@ -17,7 +17,13 @@ const dialogVisible = ref(false)
       >上传图片 · 调整质量 · 下载压缩结果</el-link
     >
   </WelcomeItem>
-
+  <WelcomeItem>
+    <template #icon>
+      <DocumentationIcon />
+    </template>
+    <template #heading>二维码生成</template>
+    <el-link type="primary" @click="dialogVisible = true">一键生成二维码</el-link>
+  </WelcomeItem>
   <ImageCompression
     :dialogVisible="dialogVisible"
     @close="dialogVisible = false"

@@ -1,5 +1,5 @@
 <template>
-  <el-dialog title="图片压缩" v-model="show" width="80%" @close="handleClose">
+  <el-drawer title="图片压缩" v-model="show" size="50%" direction="rtl" @close="handleClose">
     <div class="main-container">
       <div class="upload-section">
         <h2 class="section-title">上传图片</h2>
@@ -153,7 +153,7 @@
     <div class="app-footer">
       <p>Vue 3 + Element Plus 图片压缩工具 | 使用 Canvas API 实现无损压缩</p>
     </div>
-  </el-dialog>
+  </el-drawer>
 </template>
 <script setup>
 import { computed, ref, watch } from 'vue'
