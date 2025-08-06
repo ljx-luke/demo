@@ -2,9 +2,14 @@
 import { ref } from 'vue'
 import WelcomeItem from './WelcomeItem.vue'
 import DocumentationIcon from './icons/IconDocumentation.vue'
-import ImageCompression from './ImageCompression.vue'
+import Drawer from './DrawerWrap.vue'
 
 const dialogVisible = ref(false)
+const drawerType = ref('')
+const showDrawer = (type: string) => {
+  drawerType.value = type
+  dialogVisible.value = true
+}
 </script>
 
 <template>
@@ -13,7 +18,7 @@ const dialogVisible = ref(false)
       <DocumentationIcon />
     </template>
     <template #heading>图片压缩</template>
-    <el-link type="primary" @click="dialogVisible = true"
+    <el-link type="primary" @click="showDrawer('ImageCompression')"
       >上传图片 · 调整质量 · 下载压缩结果</el-link
     >
   </WelcomeItem>
@@ -22,10 +27,12 @@ const dialogVisible = ref(false)
       <DocumentationIcon />
     </template>
     <template #heading>二维码生成</template>
-    <el-link type="primary" @click="dialogVisible = true">一键生成二维码</el-link>
+    <el-link type="primary" @click="showDrawer('qRCode')">一键生成二维码</el-link>
   </WelcomeItem>
-  <ImageCompression
-    :dialogVisible="dialogVisible"
+  <Drawer
+    v-model:visible="dialogVisible"
     @close="dialogVisible = false"
-  ></ImageCompression>
+    :type="drawerType"
+    transition="el-fade-in-linear"
+  />
 </template>

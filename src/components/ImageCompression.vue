@@ -1,177 +1,160 @@
 <template>
-  <el-drawer title="图片压缩" v-model="show" size="50%" direction="rtl" @close="handleClose">
-    <div class="main-container">
-      <div class="upload-section">
-        <h2 class="section-title">上传图片</h2>
+  <div class="main-container">
+    <div class="upload-section">
+      <h2 class="section-title">上传图片</h2>
 
+      <div
+        class="upload-card"
+        @click="openFilePicker"
+        @dragover.prevent="handleDragOver"
+        @drop.prevent="handleDrop"
+      >
+        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+        <p class="upload-text">点击或拖拽图片到此处上传</p>
+        <p class="upload-hint">支持 JPG, PNG, GIF, WEBP 格式</p>
+        <input
+          type="file"
+          class="file-input"
+          accept="image/*"
+          @change="handleFileChange"
+          ref="fileInput"
+        />
+      </div>
+
+      <div class="controls-card">
+        <div class="control-group">
+          <label class="control-label">压缩质量: {{ quality }}%</label>
+          <el-slider v-model="quality" :min="10" :max="100" :step="5" show-stops></el-slider>
+          <div class="quality-display">
+            <span>低质量</span>
+            <span class="quality-value">{{ quality }}%</span>
+            <span>高质量</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">输出格式</label>
+          <el-radio-group v-model="outputFormat">
+            <el-radio label="image/jpeg">JPEG</el-radio>
+            <el-radio label="image/png">PNG</el-radio>
+            <el-radio label="image/webp">WEBP</el-radio>
+          </el-radio-group>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">调整尺寸</label>
+          <el-checkbox v-model="resizeEnabled">启用尺寸调整</el-checkbox>
+
+          <div v-if="resizeEnabled" style="margin-top: 15px">
+            <div style="display: flex; gap: 15px; margin-bottom: 10px">
+              <el-input
+                v-model="resizeWidth"
+                placeholder="宽度"
+                type="number"
+                min="100"
+                :max="originalWidth"
+              >
+                <template #append>px</template>
+              </el-input>
+              <el-input
+                v-model="resizeHeight"
+                placeholder="高度"
+                type="number"
+                min="100"
+                :max="originalHeight"
+              >
+                <template #append>px</template>
+              </el-input>
+            </div>
+            <el-checkbox v-model="maintainAspectRatio">保持宽高比</el-checkbox>
+          </div>
+        </div>
+
+        <div class="compression-info" v-if="originalImage">
+          <span>原始大小: {{ formatFileSize(originalSize) }}</span>
+          <i class="fas fa-arrow-right"></i>
+          <span class="success-text">压缩后: {{ formatFileSize(compressedSize) }}</span>
+          <span class="success-text">(节省 {{ compressionRatio }}%)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-section">
+      <h2 class="section-title">预览结果</h2>
+
+      <div class="preview-tabs">
         <div
-          class="upload-card"
-          @click="openFilePicker"
-          @dragover.prevent="handleDragOver"
-          @drop.prevent="handleDrop"
+          class="preview-tab"
+          :class="{ active: activeTab === 'original' }"
+          @click="activeTab = 'original'"
         >
-          <i class="fas fa-cloud-upload-alt upload-icon"></i>
-          <p class="upload-text">点击或拖拽图片到此处上传</p>
-          <p class="upload-hint">支持 JPG, PNG, GIF, WEBP 格式</p>
-          <input
-            type="file"
-            class="file-input"
-            accept="image/*"
-            @change="handleFileChange"
-            ref="fileInput"
+          原始图片
+        </div>
+        <div
+          class="preview-tab"
+          :class="{ active: activeTab === 'compressed' }"
+          @click="activeTab = 'compressed'"
+        >
+          压缩结果
+        </div>
+      </div>
+
+      <div class="preview-container">
+        <div class="image-preview">
+          <img
+            v-if="activeTab === 'original' && originalImage"
+            :src="originalImage"
+            alt="原始图片"
           />
-        </div>
-
-        <div class="controls-card">
-          <div class="control-group">
-            <label class="control-label">压缩质量: {{ quality }}%</label>
-            <el-slider v-model="quality" :min="10" :max="100" :step="5" show-stops></el-slider>
-            <div class="quality-display">
-              <span>低质量</span>
-              <span class="quality-value">{{ quality }}%</span>
-              <span>高质量</span>
-            </div>
+          <img
+            v-else-if="activeTab === 'compressed' && previewImage"
+            :src="previewImage"
+            alt="压缩图片"
+          />
+          <div v-else class="preview-placeholder">
+            <i class="fas fa-image"></i>
+            <p>请上传图片查看预览</p>
           </div>
 
-          <div class="control-group">
-            <label class="control-label">输出格式</label>
-            <el-radio-group v-model="outputFormat">
-              <el-radio label="image/jpeg">JPEG</el-radio>
-              <el-radio label="image/png">PNG</el-radio>
-              <el-radio label="image/webp">WEBP</el-radio>
-            </el-radio-group>
+          <div class="dimension-info" v-if="activeTab === 'original' && originalImage">
+            {{ originalWidth }} × {{ originalHeight }} px
           </div>
-
-          <div class="control-group">
-            <label class="control-label">调整尺寸</label>
-            <el-checkbox v-model="resizeEnabled">启用尺寸调整</el-checkbox>
-
-            <div v-if="resizeEnabled" style="margin-top: 15px">
-              <div style="display: flex; gap: 15px; margin-bottom: 10px">
-                <el-input
-                  v-model="resizeWidth"
-                  placeholder="宽度"
-                  type="number"
-                  min="100"
-                  :max="originalWidth"
-                >
-                  <template #append>px</template>
-                </el-input>
-                <el-input
-                  v-model="resizeHeight"
-                  placeholder="高度"
-                  type="number"
-                  min="100"
-                  :max="originalHeight"
-                >
-                  <template #append>px</template>
-                </el-input>
-              </div>
-              <el-checkbox v-model="maintainAspectRatio">保持宽高比</el-checkbox>
-            </div>
-          </div>
-
-          <div class="compression-info" v-if="originalImage">
-            <span>原始大小: {{ formatFileSize(originalSize) }}</span>
-            <i class="fas fa-arrow-right"></i>
-            <span class="success-text">压缩后: {{ formatFileSize(compressedSize) }}</span>
-            <span class="success-text">(节省 {{ compressionRatio }}%)</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="preview-section">
-        <h2 class="section-title">预览结果</h2>
-
-        <div class="preview-tabs">
-          <div
-            class="preview-tab"
-            :class="{ active: activeTab === 'original' }"
-            @click="activeTab = 'original'"
-          >
-            原始图片
-          </div>
-          <div
-            class="preview-tab"
-            :class="{ active: activeTab === 'compressed' }"
-            @click="activeTab = 'compressed'"
-          >
-            压缩结果
+          <div class="dimension-info" v-else-if="activeTab === 'compressed' && previewImage">
+            {{ compressedWidth }} × {{ compressedHeight }} px
           </div>
         </div>
 
-        <div class="preview-container">
-          <div class="image-preview">
-            <img
-              v-if="activeTab === 'original' && originalImage"
-              :src="originalImage"
-              alt="原始图片"
-            />
-            <img
-              v-else-if="activeTab === 'compressed' && previewImage"
-              :src="previewImage"
-              alt="压缩图片"
-            />
-            <div v-else class="preview-placeholder">
-              <i class="fas fa-image"></i>
-              <p>请上传图片查看预览</p>
-            </div>
-
-            <div class="dimension-info" v-if="activeTab === 'original' && originalImage">
-              {{ originalWidth }} × {{ originalHeight }} px
-            </div>
-            <div class="dimension-info" v-else-if="activeTab === 'compressed' && previewImage">
-              {{ compressedWidth }} × {{ compressedHeight }} px
-            </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">原始大小</div>
+            <div class="stat-value">{{ formatFileSize(originalSize) }}</div>
           </div>
-
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-label">原始大小</div>
-              <div class="stat-value">{{ formatFileSize(originalSize) }}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">压缩后大小</div>
-              <div class="stat-value">{{ formatFileSize(compressedSize) }}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">节省空间</div>
-              <div class="stat-value stat-highlight">{{ compressionRatio }}%</div>
-            </div>
+          <div class="stat-card">
+            <div class="stat-label">压缩后大小</div>
+            <div class="stat-value">{{ formatFileSize(compressedSize) }}</div>
           </div>
+          <div class="stat-card">
+            <div class="stat-label">节省空间</div>
+            <div class="stat-value stat-highlight">{{ compressionRatio }}%</div>
+          </div>
+        </div>
 
-          <div class="actions">
-            <div class="action-btn reset-btn" @click="reset"><i class="fas fa-redo"></i> 重置</div>
-            <div class="action-btn download-btn" @click="downloadImage" :disabled="!previewImage">
-              <i class="fas fa-download"></i> 下载图片
-            </div>
+        <div class="actions">
+          <div class="action-btn reset-btn" @click="reset"><i class="fas fa-redo"></i> 重置</div>
+          <div class="action-btn download-btn" @click="downloadImage" :disabled="!previewImage">
+            <i class="fas fa-download"></i> 下载图片
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="app-footer">
-      <p>Vue 3 + Element Plus 图片压缩工具 | 使用 Canvas API 实现无损压缩</p>
-    </div>
-  </el-drawer>
+  <div class="app-footer">
+    <p>Vue 3 + Element Plus 图片压缩工具 | 使用 Canvas API 实现无损压缩</p>
+  </div>
 </template>
 <script setup lang="ts">
-import { computed, ref, watch, type Ref, type ComputedRef } from 'vue'
-
-interface Props {
-  dialogVisible: boolean
-}
-
-const props = defineProps<Props>()
-const show: ComputedRef<boolean> = computed(() => props.dialogVisible)
-
-const emit = defineEmits<{
-  (e: 'close'): void
-}>()
-
-const handleClose = () => {
-  emit('close')
-}
+import { ref, watch, type Ref } from 'vue'
 
 const fileInput: Ref<HTMLInputElement | null> = ref(null)
 const originalImage: Ref<string | null> = ref(null)
@@ -411,6 +394,7 @@ watch([quality, outputFormat, resizeEnabled, resizeWidth, resizeHeight], () => {
   border-radius: 12px;
   padding: 25px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding-top: 0;
 }
 
 .preview-section {
