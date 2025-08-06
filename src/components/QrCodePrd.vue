@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import * as QRCode from 'qrcode'
+import QRCode from 'qrcode'
 import { ElMessage } from 'element-plus'
 import { Link, MagicStick, Download, ZoomIn } from '@element-plus/icons-vue'
 
