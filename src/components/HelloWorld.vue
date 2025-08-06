@@ -7,7 +7,7 @@ defineProps<{
 <template>
   <div class="greetings">
     <h1 class="green">{{ msg }}</h1>
-    <h3>这是一个基于Vue3的组件demo</h3>
+    <h3>这是一个工具库组件demo</h3>
   </div>
 </template>
 
