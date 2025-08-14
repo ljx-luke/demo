@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import WelcomeItem from './WelcomeItem.vue'
 import DocumentationIcon from './icons/IconDocumentation.vue'
-import Drawer from './DrawerWrap.vue'
+import DrawerLeft from './DrawerLeft.vue'
 
 const dialogVisible = ref(false)
 const drawerType = ref('')
@@ -29,7 +29,7 @@ const showDrawer = (type: string) => {
     <template #heading>二维码生成</template>
     <el-link type="primary" @click="showDrawer('qRCode')">一键生成二维码</el-link>
   </WelcomeItem>
-  <Drawer
+  <DrawerLeft
     v-model:visible="dialogVisible"
     @close="dialogVisible = false"
     :type="drawerType"
