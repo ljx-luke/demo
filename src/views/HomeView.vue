@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import TheWelcome from '../components/TheWelcome.vue'
+import toolsIndex from '../components/tools/index.vue'
 </script>
 
 <template>
   <main>
-    <TheWelcome />
+    <toolsIndex />
   </main>
 </template>

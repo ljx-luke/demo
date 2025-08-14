@@ -1,5 +1,5 @@
 <template>
-  <el-drawer :title="title" v-model="show" size="50%" direction="rtl" @close="handleClose">
+  <el-drawer :title="title" v-model="show" size="50%" direction="ltr" @close="handleClose">
     <template v-for="item in componentList" :key="item.name">
       <component :is="item.component" v-if="item.name === type"></component>
     </template>
@@ -7,9 +7,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from 'vue'
-import ImageCompression from './ImageCompression.vue'
-import qRCode from './QrCodePrd.vue'
+import { computed, defineComponent, defineAsyncComponent } from 'vue'
 
 export default defineComponent({
   name: 'AppDrawer',
@@ -32,6 +30,8 @@ export default defineComponent({
           return '图片压缩'
         case 'qRCode':
           return '二维码生成'
+        case 'PdfToWord':
+          return 'PDF转Word'
         default:
           return ''
       }
@@ -41,8 +41,18 @@ export default defineComponent({
     }
 
     const componentList = [
-      { component: ImageCompression, name: 'ImageCompression' },
-      { component: qRCode, name: 'qRCode' },
+      {
+        component: defineAsyncComponent(() => import('./tools/ImageCompression.vue')),
+        name: 'ImageCompression',
+      },
+      {
+        component: defineAsyncComponent(() => import('./tools/QrCodePrd.vue')),
+        name: 'qRCode',
+      },
+      {
+        component: defineAsyncComponent(() => import('./tools/PdfToWord.vue')),
+        name: 'PdfToWord',
+      },
     ]
 
     return {
