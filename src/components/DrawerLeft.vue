@@ -32,6 +32,8 @@ export default defineComponent({
           return '二维码生成'
         case 'PdfToWord':
           return 'PDF转Word'
+        case 'WordToPdf':
+          return 'Word转PDF'
         default:
           return ''
       }
@@ -52,6 +54,10 @@ export default defineComponent({
       {
         component: defineAsyncComponent(() => import('./tools/PdfToWord.vue')),
         name: 'PdfToWord',
+      },
+      {
+        component: defineAsyncComponent(() => import('./tools/WordToPdf.vue')),
+        name: 'WordToPdf',
       },
     ]
 

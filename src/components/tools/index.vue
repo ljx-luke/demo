@@ -42,7 +42,8 @@ export default defineComponent({
       <DocumentationIcon />
     </template>
     <template #heading>在线转换</template>
-    <el-link type="primary" @click="showDrawer('PdfToWord')">在线转换 · PDF转Word</el-link>
+    <el-link type="primary" @click="showDrawer('PdfToWord')">PDF转Word</el-link>
+    <el-link type="primary" @click="showDrawer('WordToPdf')"> · Word转PDF</el-link>
   </WelcomeItem>
   <Drawer
     v-model:visible="dialogVisible"
@@ -51,3 +52,5 @@ export default defineComponent({
     transition="el-fade-in-linear"
   />
 </template>
+
+<style scoped></style>
